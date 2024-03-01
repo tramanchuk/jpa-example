@@ -3,14 +3,16 @@ package com.example.jpa.entity;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name="companies")
+@Table(name = "companies")
 public class Company implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name="company_id")
     private Long id;
 
     @Column
@@ -28,6 +30,9 @@ public class Company implements Serializable {
     @Column
     private String country;
 
+    @ManyToMany(mappedBy = "companies")
+    private List<Employee> employees = new ArrayList<>();
+
     public Company() {
     }
 
@@ -39,13 +44,20 @@ public class Company implements Serializable {
         this.name = name;
     }
 
-    public Company(Long id, String city, String state, String zipcode, String country, String name) {
+
+    public Company(Long id, String city, String state, String zipcode, String country, String name, List<Employee> employees) {
         this.id = id;
         this.city = city;
         this.state = state;
         this.zipcode = zipcode;
         this.country = country;
         this.name = name;
+        this.employees = employees;
+    }
+
+    public Company(String name, String country) {
+        this.name = name;
+        this.country = country;
     }
 
     public Company(String name) {
@@ -90,5 +102,13 @@ public class Company implements Serializable {
 
     public void setCountry(String country) {
         this.country = country;
+    }
+
+    public List<Employee> getEmployees() {
+        return employees;
+    }
+
+    public void setEmployees(List<Employee> employees) {
+        this.employees = employees;
     }
 }

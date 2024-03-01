@@ -1,14 +1,14 @@
 package com.example.jpa;
 
-import com.example.jpa.entity.Company;
-import com.example.jpa.entity.Employee;
-import com.example.jpa.entity.Salary;
-import com.example.jpa.repository.*;
+import com.example.jpa.entity.*;
+import com.example.jpa.repository.EmployeeRepositoryImpl;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import jakarta.persistence.PersistenceContext;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class Main {
@@ -17,61 +17,66 @@ public class Main {
     EntityManager entityManager;
 
     public static void main(String[] args) {
-
-        EntityManagerFactory entityManagerFactory = Persistence.
-                createEntityManagerFactory("default");
+        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("default");
         EntityManager entityManager = entityManagerFactory.createEntityManager();
-        EmployeeRepository employeeRepository = new EmployeeRepositoryImpl(entityManager);
-        CompanyRepository companyRepository = new CompanyRepositoryImpl(entityManager);
-        SalaryRepository salaryRepository = new SalaryRepositoryImpl(entityManager);
+        EmployeeRepositoryImpl employeeRepository = new EmployeeRepositoryImpl(entityManager);
 
-        Company company1 = new Company("MyCompany");
-        companyRepository.save(company1);
-        Salary salary1 = new Salary(54000.00, true);
-        salaryRepository.save(salary1);
-        Salary salary2 = new Salary(54000.00, true);
-        salaryRepository.save(salary1);
-        salary1.setCompany(company1);
-        salaryRepository.save(salary1);
-        salary2.setCompany(company1);
-        salaryRepository.save(salary1);
-
-        //create a new Employee
-        Employee employee = new Employee();
+        ActiveEmployee employee = new ActiveEmployee();
         employee.setfName("Mary");
-        employee.setlName("Doe");
+        employee.setlName("Johnson");
         employee.setYearsExperience(20);
 
-        //set salary
-        employee.setSalary(salary1);
-
-        //set company
-        employee.setCompany(company1);
-
-        Employee employee2 = new Employee();
-        employee2.setfName("James");
+        ActiveEmployee employee2 = new ActiveEmployee();
+        employee2.setfName("John");
         employee2.setlName("Doe");
         employee2.setYearsExperience(5);
-        employee2.setCompany(company1);
-        employee2.setSalary(salary2);
-        //save Employees
+
+        //set employment history
+        employee.setCompanies(generateCompanies());
+        employee2.setCompanies(generateCompanies());
+
+        //create an EmployeeProfile and associate it to an Employee
+        employee.setProfile(new EmployeeProfile("userName", "password!", "email@email.com", employee, "Software Engineer"));
+        employee2.setProfile(new EmployeeProfile("jDoe", "password234", "johndoe@email.com", employee, "Project Manager"));
+
+        //set salaries
+        employee.setSalaries(generateSalaries());
+        employee2.setSalaries(generateSalaries());
+
+        //save Employee
         employeeRepository.save(employee);
         employeeRepository.save(employee2);
 
-        //update Employee
-        Optional<Employee> retrievedEmployee = employeeRepository.
-                getEmployeeById(6L);
-        if (retrievedEmployee.isPresent()) {
-            retrievedEmployee.get().setlName("Johnson");
-            employeeRepository.save(retrievedEmployee.get());
-            System.out.println("name is updated");
-        }
+        employeeRepository.getEmployeesByExperienceCriteriaQuery(10).forEach(e -> System.out.println(e.getfName()));
+        System.out.println(employeeRepository.getEmployeeByFullname("John", "Doe").get().getYearsExperience());
 
-        //delete Employee
-        employeeRepository.deleteEmployee(employee2);
-
-        System.out.println("Don't forget to launch Postgres before running this code!");
         entityManager.close();
         entityManagerFactory.close();
     }
+
+    private static List<Company> generateCompanies() {
+        Company company1 = new Company("Google", "USA");
+        Company company2 = new Company("Amazon", "USA");
+
+        List<Company> companies = new ArrayList<>();
+        companies.add(company1);
+        companies.add(company2);
+
+        return companies;
+    }
+
+    private static List<Salary> generateSalaries() {
+        //create the Salaries and associate to Employee
+        Salary currentSalary = new Salary(34000.00, true);
+        Salary historicalSalary1 = new Salary(10000.00, false);
+        Salary historicalSalary2 = new Salary(5000.00, false);
+
+        List<Salary> salaries = new ArrayList<>();
+        salaries.add(currentSalary);
+        salaries.add(historicalSalary1);
+        salaries.add(historicalSalary2);
+
+        return salaries;
+    }
+
 }

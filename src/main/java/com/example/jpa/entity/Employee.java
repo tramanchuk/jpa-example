@@ -9,10 +9,12 @@ import java.util.List;
 @Entity
 @Table(name = "employees")
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
+//@Inheritance(strategy=InheritanceType.JOINED)
+//@Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 public class Employee implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name="employee_id")
     private Long id;
 
@@ -28,22 +30,42 @@ public class Employee implements Serializable {
     @Transient
     private Double totalCompensation;
 
-    @OneToOne(cascade = CascadeType.PERSIST)
-    private Salary salary;
+    @ManyToMany(cascade = {
+            CascadeType.PERSIST,
+            CascadeType.MERGE
+    })
+    @JoinTable(name = "employee_company",
+            joinColumns = @JoinColumn(name = "employee_id"),
+            inverseJoinColumns = @JoinColumn(name = "company_id")
+    )
+    private List<Company> companies = new ArrayList<>();
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    private Company company;
+    @OneToOne(mappedBy="employee", cascade = CascadeType.ALL)
+    private EmployeeProfile profile;
+
+    @Column
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "employee_id")
+    private List<Salary> salaries = new ArrayList<>();
 
     public Employee() {
     }
 
-    public Employee(Long id, String fName, String lName, Integer yearsExperience, Company company, Salary salary) {
+    public Employee(Long id, String fName, String lName, Integer yearsExperience, List<Company> companies, List<Salary> salaries) {
         this.id = id;
         this.fName = fName;
         this.lName = lName;
         this.yearsExperience = yearsExperience;
-        this.company = company;
-        this.salary = salary;
+        this.companies = companies;
+        this.salaries = salaries;
+    }
+
+    public Employee(Long id, String fName, String lName, Integer yearsExperience, List<Company> companies) {
+        this.id = id;
+        this.fName = fName;
+        this.lName = lName;
+        this.yearsExperience = yearsExperience;
+        this.companies = companies;
     }
 
     public Long getId() {
@@ -86,19 +108,27 @@ public class Employee implements Serializable {
         this.totalCompensation = totalCompensation;
     }
 
-    public Salary getSalary() {
-        return salary;
+    public List<Company> getCompanies() {
+        return companies;
     }
 
-    public void setSalary(Salary salary) {
-        this.salary = salary;
+    public void setCompanies(List<Company> companies) {
+        this.companies = companies;
     }
 
-    public Company getCompany() {
-        return company;
+    public EmployeeProfile getProfile() {
+        return profile;
     }
 
-    public void setCompany(Company company) {
-        this.company = company;
+    public void setProfile(EmployeeProfile profile) {
+        this.profile = profile;
+    }
+
+    public List<Salary> getSalaries() {
+        return salaries;
+    }
+
+    public void setSalaries(List<Salary> salaries) {
+        this.salaries = salaries;
     }
 }
